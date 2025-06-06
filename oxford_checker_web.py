@@ -4,6 +4,20 @@ import re
 from spellchecker import SpellChecker
 import io
 
+def normalize_ligatures(text):
+    ligature_map = {
+        '\uFB00': 'ff',  # ﬀ
+        '\uFB01': 'fi',  # ﬁ
+        '\uFB02': 'fl',  # ﬂ
+        '\uFB03': 'ffi', # ﬃ
+        '\uFB04': 'ffl', # ﬄ
+        '\uFB05': 'ft',  # ﬅ
+        '\uFB06': 'st',  # ﬆ
+    }
+    for ligature, replacement in ligature_map.items():
+        text = text.replace(ligature, replacement)
+    return text
+
 # Helper function to normalize word variants
 def normalize_word(word, oxford_ize_words):
     suffixes = ['ed', 'd', 'ing', 'es', 's']
@@ -36,8 +50,10 @@ def check_pdf(file, oxford_ize_words, medical_corrections):
     pdf_bytes = file.read()
     doc = fitz.open("pdf", pdf_bytes)
     text = ""
-    for page in doc:
-        text += page.get_text()
+for page in doc:
+    page_text = page.get_text()
+    page_text = normalize_ligatures(page_text)  # Clean ligatures
+    text += page_text
 
     words = re.findall(r'\b\w+\b', text.lower())
 
