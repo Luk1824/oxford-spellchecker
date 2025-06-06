@@ -1,7 +1,7 @@
 import streamlit as st
 import fitz  # PyMuPDF
 import re
-import enchant
+from spellchecker import SpellChecker
 import io
 
 # Helper function to normalize word variants
@@ -30,7 +30,7 @@ def load_medical_corrections(filename="oxford_medical_corrections.txt"):
 
 # Main checking function
 def check_pdf(file, oxford_ize_words, medical_corrections):
-    checker = enchant.Dict("en_GB")  # British English dictionary
+    spell = SpellChecker(language=None)  # No built-in dictionary — catch true unknowns
 
     pdf_bytes = file.read()
     doc = fitz.open("pdf", pdf_bytes)
@@ -51,7 +51,7 @@ def check_pdf(file, oxford_ize_words, medical_corrections):
         elif word in medical_corrections.keys():
             medical_issues.append((word, medical_corrections[word]))
         else:
-            if not checker.check(word) and word.isalpha() and len(word) > 2:
+            if word.isalpha() and len(word) > 2 and word not in spell:
                 typo_issues.append(word)
 
     return protected_words, medical_issues, typo_issues
