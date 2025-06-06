@@ -4,6 +4,7 @@ import re
 from spellchecker import SpellChecker
 import io
 
+# 🛠️ Normalize ligatures (e.g., ﬂ → fl)
 def normalize_ligatures(text):
     ligature_map = {
         '\uFB00': 'ff',  # ﬀ
@@ -18,7 +19,7 @@ def normalize_ligatures(text):
         text = text.replace(ligature, replacement)
     return text
 
-# Helper function to normalize word variants
+# 🛠️ Normalize verb suffixes (like randomizing → randomize)
 def normalize_word(word, oxford_ize_words):
     suffixes = ['ed', 'd', 'ing', 'es', 's']
     for suffix in suffixes:
@@ -28,28 +29,28 @@ def normalize_word(word, oxford_ize_words):
                 return base
     return word
 
-# Load Oxford -ize List
+# 🛠️ Load Oxford -ize List
 def load_oxford_ize_list(filename="oxford_ize_list.txt"):
     with open(filename, "r") as f:
         return set(word.strip().lower() for word in f)
 
-# Load Medical Corrections
+# 🛠️ Load Medical Corrections
 def load_medical_corrections(filename="oxford_medical_corrections.txt"):
     medical_corrections = {}
     with open(filename, "r") as f:
         for line in f:
             parts = line.strip().split()
-            if len(parts) == 2:  # ✅ Only accept valid lines
+            if len(parts) == 2:  # Only accept valid lines
                 american, british = parts
                 medical_corrections[american.lower()] = british.lower()
     return medical_corrections
 
-# Load Abbreviations
+# 🛠️ Load Abbreviations
 def load_abbreviations(filename="medical_scientific_abbreviations.txt"):
     with open(filename, "r") as f:
         return set(word.strip().lower() for word in f)
 
-# Main checking function
+# 🛠️ Main checking function
 def check_pdf(file, oxford_ize_words, medical_corrections, abbreviations):
     spell = SpellChecker(language="en")
     spell.word_frequency.load_text_file("words_en_gb.txt")
@@ -64,28 +65,37 @@ def check_pdf(file, oxford_ize_words, medical_corrections, abbreviations):
 
     words = re.findall(r'\b\w+\b', text.lower())
 
-    protected_words = []
+    oxford_ize_issues = []
     medical_issues = []
     typo_issues = []
 
     for word in words:
+        if word in abbreviations:
+            continue
+
         normalized_word = normalize_word(word, oxford_ize_words)
-        if normalized_word in oxford_ize_words:
-            protected_words.append(word)
-        elif word in medical_corrections.keys():
+
+        # Medical spelling correction
+        if word in medical_corrections.keys():
             medical_issues.append((word, medical_corrections[word]))
+        # Oxford -ise correction detection
+        elif word.endswith("ise") and len(word) > 4:
+            candidate = word[:-3] + "ize"
+            if candidate in oxford_ize_words:
+                oxford_ize_issues.append((word, candidate))
+        # Typo detection
         else:
-            if word.isalpha() and len(word) > 2 and word not in spell and word not in abbreviations:
+            if word.isalpha() and len(word) > 2 and word not in spell:
                 typo_issues.append(word)
 
-    return protected_words, medical_issues, typo_issues
+    return oxford_ize_issues, medical_issues, typo_issues
 
-# Pre-load these once outside main
+# Pre-load these once
 oxford_ize_words = load_oxford_ize_list()
 medical_corrections = load_medical_corrections()
 abbreviations = load_abbreviations()
 
-# Streamlit Web App
+# 🚀 Streamlit Web App
 def main():
     st.title("Oxford English PDF Spellchecker")
 
@@ -94,34 +104,34 @@ def main():
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
     if uploaded_file is not None:
-    oxford_ize_issues, medical_issues, typo_issues = check_pdf(
-        uploaded_file, oxford_ize_words, medical_corrections, abbreviations
-    )
+        oxford_ize_issues, medical_issues, typo_issues = check_pdf(
+            uploaded_file, oxford_ize_words, medical_corrections, abbreviations
+        )
 
-    st.success("Check completed!")
+        st.success("Check completed!")
 
-    # ❗ Oxford -ize corrections
-    st.subheader("❗ Oxford -ize spelling corrections needed:")
-    if oxford_ize_issues:
-        for wrong, correct in oxford_ize_issues:
-            st.write(f"{wrong} ➔ {correct}")
-    else:
-        st.write("No Oxford -ize corrections needed.")
+        # ❗ Oxford -ize corrections
+        st.subheader("❗ Oxford -ize spelling corrections needed:")
+        if oxford_ize_issues:
+            for wrong, correct in oxford_ize_issues:
+                st.write(f"{wrong} ➔ {correct}")
+        else:
+            st.write("No Oxford -ize corrections needed.")
 
-    # ❗ Medical spelling corrections
-    st.subheader("❗ Medical spelling corrections needed:")
-    if medical_issues:
-        for american, british in medical_issues:
-            st.write(f"{american} ➔ {british}")
-    else:
-        st.write("No medical corrections needed.")
+        # ❗ Medical spelling corrections
+        st.subheader("❗ Medical spelling corrections needed:")
+        if medical_issues:
+            for american, british in medical_issues:
+                st.write(f"{american} ➔ {british}")
+        else:
+            st.write("No medical corrections needed.")
 
-    # ❗ Typographical or spelling issues
-    st.subheader("❗ Typographical or spelling issues:")
-    if typo_issues:
-        st.write(", ".join(sorted(set(typo_issues))))
-    else:
-        st.write("No typos detected.")
+        # ❗ Typographical or spelling issues
+        st.subheader("❗ Typographical or spelling issues:")
+        if typo_issues:
+            st.write(", ".join(sorted(set(typo_issues))))
+        else:
+            st.write("No typos detected.")
 
 if __name__ == "__main__":
     main()
