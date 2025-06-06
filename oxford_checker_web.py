@@ -70,7 +70,6 @@ for page in doc:
         else:
             if word.isalpha() and len(word) > 2 and word not in spell:
                 typo_issues.append(word)
-
     return protected_words, medical_issues, typo_issues
 
 # Streamlit Web App
