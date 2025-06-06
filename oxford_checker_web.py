@@ -38,8 +38,10 @@ def load_medical_corrections(filename="oxford_medical_corrections.txt"):
     medical_corrections = {}
     with open(filename, "r") as f:
         for line in f:
-            american, british = line.strip().split()
-            medical_corrections[american.lower()] = british.lower()
+            parts = line.strip().split()
+            if len(parts) == 2:  # ✅ Only accept valid lines
+                american, british = parts
+                medical_corrections[american.lower()] = british.lower()
     return medical_corrections
 
 # Load Abbreviations
