@@ -44,16 +44,16 @@ def load_medical_corrections(filename="oxford_medical_corrections.txt"):
 
 # Main checking function
 def check_pdf(file, oxford_ize_words, medical_corrections):
-    spell = SpellChecker(language="en")  # Start with US English
-    spell.word_frequency.load_text_file("words_en_gb.txt")  # Add British English words
+    spell = SpellChecker(language="en")
+    spell.word_frequency.load_text_file("words_en_gb.txt")
 
     pdf_bytes = file.read()
     doc = fitz.open("pdf", pdf_bytes)
     text = ""
-for page in doc:
-    page_text = page.get_text()
-    page_text = normalize_ligatures(page_text)  # Clean ligatures
-    text += page_text
+    for page in doc:
+        page_text = page.get_text()
+        page_text = normalize_ligatures(page_text)
+        text += page_text
 
     words = re.findall(r'\b\w+\b', text.lower())
 
@@ -70,6 +70,8 @@ for page in doc:
         else:
             if word.isalpha() and len(word) > 2 and word not in spell:
                 typo_issues.append(word)
+
+    # ✅ The return must be *indented* to be inside the function
     return protected_words, medical_issues, typo_issues
 
 # Streamlit Web App
