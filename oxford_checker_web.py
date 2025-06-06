@@ -94,31 +94,34 @@ def main():
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
     if uploaded_file is not None:
-        # ✅ Now pass abbreviations
-        protected_words, medical_issues, typo_issues = check_pdf(
-            uploaded_file, oxford_ize_words, medical_corrections, abbreviations
-        )
+    oxford_ize_issues, medical_issues, typo_issues = check_pdf(
+        uploaded_file, oxford_ize_words, medical_corrections, abbreviations
+    )
 
-        st.success("Check completed!")
+    st.success("Check completed!")
 
-        st.subheader("✅ Oxford -ize protected words:")
-        if protected_words:
-            st.write(", ".join(sorted(set(protected_words))))
-        else:
-            st.write("No protected words found.")
+    # ❗ Oxford -ize corrections
+    st.subheader("❗ Oxford -ize spelling corrections needed:")
+    if oxford_ize_issues:
+        for wrong, correct in oxford_ize_issues:
+            st.write(f"{wrong} ➔ {correct}")
+    else:
+        st.write("No Oxford -ize corrections needed.")
 
-        st.subheader("⚠️ Medical spelling corrections needed:")
-        if medical_issues:
-            for american, british in medical_issues:
-                st.write(f"{american} ➔ {british}")
-        else:
-            st.write("No medical corrections needed.")
+    # ❗ Medical spelling corrections
+    st.subheader("❗ Medical spelling corrections needed:")
+    if medical_issues:
+        for american, british in medical_issues:
+            st.write(f"{american} ➔ {british}")
+    else:
+        st.write("No medical corrections needed.")
 
-        st.subheader("⚠️ Typographical or spelling issues:")
-        if typo_issues:
-            st.write(", ".join(sorted(set(typo_issues))))
-        else:
-            st.write("No typos detected.")
+    # ❗ Typographical or spelling issues
+    st.subheader("❗ Typographical or spelling issues:")
+    if typo_issues:
+        st.write(", ".join(sorted(set(typo_issues))))
+    else:
+        st.write("No typos detected.")
 
 if __name__ == "__main__":
     main()
