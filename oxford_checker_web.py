@@ -30,7 +30,8 @@ def load_medical_corrections(filename="oxford_medical_corrections.txt"):
 
 # Main checking function
 def check_pdf(file, oxford_ize_words, medical_corrections):
-    spell = SpellChecker(language=None)  # No built-in dictionary — catch true unknowns
+    spell = SpellChecker(language="en")  # Start with US English
+    spell.word_frequency.load_text_file("words_en_gb.txt")  # Add British English words
 
     pdf_bytes = file.read()
     doc = fitz.open("pdf", pdf_bytes)
