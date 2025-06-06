@@ -42,8 +42,13 @@ def load_medical_corrections(filename="oxford_medical_corrections.txt"):
             medical_corrections[american.lower()] = british.lower()
     return medical_corrections
 
+# Load Abbreviations
+def load_abbreviations(filename="medical_scientific_abbreviations.txt"):
+    with open(filename, "r") as f:
+        return set(word.strip().lower() for word in f)
+
 # Main checking function
-def check_pdf(file, oxford_ize_words, medical_corrections):
+def check_pdf(file, oxford_ize_words, medical_corrections, abbreviations):
     spell = SpellChecker(language="en")
     spell.word_frequency.load_text_file("words_en_gb.txt")
 
@@ -68,11 +73,15 @@ def check_pdf(file, oxford_ize_words, medical_corrections):
         elif word in medical_corrections.keys():
             medical_issues.append((word, medical_corrections[word]))
         else:
-            if word.isalpha() and len(word) > 2 and word not in spell:
+            if word.isalpha() and len(word) > 2 and word not in spell and word not in abbreviations:
                 typo_issues.append(word)
 
-    # ✅ The return must be *indented* to be inside the function
     return protected_words, medical_issues, typo_issues
+
+# Pre-load these once outside main
+oxford_ize_words = load_oxford_ize_list()
+medical_corrections = load_medical_corrections()
+abbreviations = load_abbreviations()
 
 # Streamlit Web App
 def main():
@@ -83,9 +92,10 @@ def main():
     uploaded_file = st.file_uploader("Choose a PDF file", type="pdf")
 
     if uploaded_file is not None:
-        oxford_ize_words = load_oxford_ize_list()
-        medical_corrections = load_medical_corrections()
-        protected_words, medical_issues, typo_issues = check_pdf(uploaded_file, oxford_ize_words, medical_corrections)
+        # ✅ Now pass abbreviations
+        protected_words, medical_issues, typo_issues = check_pdf(
+            uploaded_file, oxford_ize_words, medical_corrections, abbreviations
+        )
 
         st.success("Check completed!")
 
